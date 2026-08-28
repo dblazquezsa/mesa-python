@@ -1,0 +1,23 @@
+# Datos y figuras generados
+*.xlsx
+*.xls
+*.pdf
+*.png
+
+# Credencial (clave de cuenta de servicio de Google)
+dblazquezsa-schelling-82ec0eee0f4c.json
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# OS
+.DS_Store
+
+# Claude Code (config local de esta máquina)
+.claude/
