@@ -63,11 +63,13 @@ class Modelo_Desplazamiento(mesa.Model):
         self.steps_to_equilibrium = 0
         self.in_equilibrium = False
         self.contact_measure = {}
+        self.same_type_contact_ratio = 0.0
         self.datacollector = mesa.DataCollector(
             model_reporters={
                 "Steps_to_Equilibrium": "steps_to_equilibrium",
                 "Contact_Measure": "contact_measure",
-                "In_Equilibrium": "in_equilibrium"
+                "In_Equilibrium": "in_equilibrium",
+                "Same_Type_Contact_Ratio": "same_type_contact_ratio",
             }
         )
 
@@ -122,6 +124,12 @@ class Modelo_Desplazamiento(mesa.Model):
                     )
                 else:
                     self.contact_measure[agent_type][neighbor_type] = 0
+
+        # Proporción de todos los contactos que ocurren entre agentes del mismo tipo
+        # (indicador escalar de segregación, útil para graficar su evolución en el tiempo)
+        self.same_type_contact_ratio = sum(
+            self.contact_measure[t][t] for t in [-1, 0, 1]
+        )
 
     def check_equilibrium(self) -> bool:
         """Verifica si el modelo ha alcanzado el equilibrio"""

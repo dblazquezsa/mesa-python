@@ -1,3 +1,9 @@
 mesa>=3.0
 pandas
 openpyxl
+
+# Para la visualización interactiva (src/visualizacion.py)
+solara
+networkx
+matplotlib
+ipyvuetify<3
