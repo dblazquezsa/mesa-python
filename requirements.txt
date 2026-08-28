@@ -6,4 +6,5 @@ openpyxl
 solara
 networkx
 matplotlib
+altair
 ipyvuetify<3
