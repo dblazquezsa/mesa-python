@@ -27,6 +27,7 @@ import textwrap
 import solara
 
 from mesa.visualization import SolaraViz, Slider, make_space_component, make_plot_component
+from mesa.visualization.utils import update_counter
 
 from modelo import Modelo_Desplazamiento
 
@@ -39,6 +40,7 @@ def agent_portrayal(agent):
 @solara.component
 def InfoComponent(model):
     """Resumen del estado actual del modelo: pasos, equilibrio y medida de contacto."""
+    update_counter.get()  # suscribe este componente a force_update() (ver ModelController)
     if model is None:
         return solara.Markdown("## Esperando inicio del modelo...")
 
