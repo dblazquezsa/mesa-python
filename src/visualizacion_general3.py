@@ -1,4 +1,4 @@
-"""Visualización interactiva de schelling_general3.py (3 poblaciones + matriz de afinidad).
+"""Visualización interactiva de schelling_general3.py (3 poblaciones + matriz de aversión).
 
 Uso como script standalone (abre una pestaña de navegador con play/pausa/paso):
 
@@ -12,15 +12,10 @@ Uso desde una celda de Jupyter/notebook:
     Page
 
 Controles disponibles:
-- Panel "Model Parameters" (n1, n2, n3, N, M): solo se aplican al pulsar
-  "Reset", porque cambiar poblaciones o el tamaño de la grilla implica
-  recrear los agentes desde cero.
+- Panel "Model Parameters" (n1, n2, n3, N, M, tolerancia y los 9 coeficientes
+  de la matriz de aversión): cajas de texto que solo se aplican al pulsar
+  "Reset", porque cualquier cambio recrea el modelo desde cero.
 - Play / Step / Pause (arriba del todo): controlan la simulación en curso.
-- Panel "Controles en caliente" (tolerancia y cada coeficiente de la matriz
-  de afinidad 3x3): a diferencia de "Model Parameters", estos se aplican
-  directamente sobre la simulación en marcha, sin reiniciarla — pausa,
-  cambia un valor y dale a Step/Play para ver el efecto sobre la
-  configuración espacial actual.
 - Cuando el modelo alcanza el equilibrio se anuncia en el panel de
   información el número de pasos que hicieron falta.
 """
@@ -29,12 +24,10 @@ import textwrap
 
 import solara
 
-from mesa.visualization import SolaraViz, Slider, make_space_component, make_plot_component
+from mesa.visualization import SolaraViz, make_space_component, make_plot_component
 from mesa.visualization.utils import update_counter
 
 from schelling_general3 import ModeloGeneral3
-
-TIPOS = (1, 2, 3)
 
 
 def agent_portrayal(agent):
@@ -54,8 +47,8 @@ def InfoComponent(model):
     else:
         anuncio = "<span style='color: orange'>En proceso...</span>"
 
-    filas_afinidad = "\n".join(
-        "        " + " | ".join(f"{model.afinidad[i][j]:.1f}" for j in range(3))
+    filas_aversion = "\n".join(
+        "        " + " | ".join(f"{model.aversion[i][j]:.1f}" for j in range(3))
         for i in range(3)
     )
 
@@ -69,9 +62,9 @@ def InfoComponent(model):
         - **Entropía local promedio:** {model.entropia:.3f}
         - **Tolerancia actual:** {model.tolerancia}
 
-        **Matriz de afinidad actual:**
+        **Matriz de aversión actual:**
         ```
-{filas_afinidad}
+{filas_aversion}
         ```
         """)
 
@@ -81,81 +74,32 @@ def InfoComponent(model):
     )
 
 
-@solara.component
-def ControlesEnCaliente(model):
-    """Tolerancia y matriz de afinidad 3x3: se aplican sobre la simulación en
-    marcha, sin reiniciarla (a diferencia de los de 'Model Parameters')."""
-    tol, set_tol = solara.use_state(float(model.tolerancia) if model else 1.0)
-
-    def valor_inicial(i, j):
-        return float(model.afinidad[i][j]) if model else (0.0 if i == j else 1.0)
-
-    # 9 pares de estado explícitos (uno por celda de la matriz 3x3) en vez de
-    # un bucle: las reglas de hooks de Solara exigen que use_state se llame
-    # el mismo número de veces, en el mismo orden, en cada render.
-    a00, set_a00 = solara.use_state(valor_inicial(0, 0))
-    a01, set_a01 = solara.use_state(valor_inicial(0, 1))
-    a02, set_a02 = solara.use_state(valor_inicial(0, 2))
-    a10, set_a10 = solara.use_state(valor_inicial(1, 0))
-    a11, set_a11 = solara.use_state(valor_inicial(1, 1))
-    a12, set_a12 = solara.use_state(valor_inicial(1, 2))
-    a20, set_a20 = solara.use_state(valor_inicial(2, 0))
-    a21, set_a21 = solara.use_state(valor_inicial(2, 1))
-    a22, set_a22 = solara.use_state(valor_inicial(2, 2))
-
-    celdas = {
-        (0, 0): (a00, set_a00), (0, 1): (a01, set_a01), (0, 2): (a02, set_a02),
-        (1, 0): (a10, set_a10), (1, 1): (a11, set_a11), (1, 2): (a12, set_a12),
-        (2, 0): (a20, set_a20), (2, 1): (a21, set_a21), (2, 2): (a22, set_a22),
-    }
-
-    def cambiar_tol(value):
-        set_tol(value)
-        if model is not None:
-            model.tolerancia = value
-
-    def cambiar_afinidad(i, j):
-        def on_change(value):
-            celdas[(i, j)][1](value)
-            if model is not None:
-                model.afinidad[i][j] = value
-        return on_change
-
-    sliders = [
-        solara.SliderFloat(
-            label=f"afinidad[{i+1}][{j+1}]" + (" (auto-aversión)" if i == j else ""),
-            value=celdas[(i, j)][0],
-            min=0.0, max=5.0, step=0.5,
-            on_value=cambiar_afinidad(i, j),
-        )
-        for i in range(3) for j in range(3)
-    ]
-
-    return solara.Card(
-        title="Controles en caliente (sin reset)",
-        children=[
-            solara.SliderFloat(label="Tolerancia", value=tol, min=0.0, max=8.0, step=0.5, on_value=cambiar_tol),
-            solara.Markdown("**Matriz de afinidad** (aversión del tipo i hacia el tipo j)"),
-            *sliders,
-            solara.Markdown(
-                "Pausa la simulación, mueve un slider y pulsa Step/Play: "
-                "se aplica sobre la configuración espacial actual, sin reiniciar."
-            ),
-        ],
-    )
-
-
 model_params = {
-    "n1": Slider("n1 (tipo 1)", 350, 0, 1500, 10),
-    "n2": Slider("n2 (tipo 2)", 350, 0, 1500, 10),
-    "n3": Slider("n3 (tipo 3)", 350, 0, 1500, 10),
-    "N": Slider("N (ancho de la grilla)", 40, 5, 100, 1),
-    "M": Slider("M (alto de la grilla)", 40, 5, 100, 1),
+    "n1": {"type": "InputText", "value": "350", "label": "n1 (tipo 1)"},
+    "n2": {"type": "InputText", "value": "350", "label": "n2 (tipo 2)"},
+    "n3": {"type": "InputText", "value": "350", "label": "n3 (tipo 3)"},
+    "N": {"type": "InputText", "value": "40", "label": "N (ancho de la grilla)"},
+    "M": {"type": "InputText", "value": "40", "label": "M (alto de la grilla)"},
+    "tolerancia": {"type": "InputText", "value": "1.0", "label": "Tolerancia"},
+    "a11": {"type": "InputText", "value": "0", "label": "aversion[1][1] (auto-aversión tipo1)"},
+    "a12": {"type": "InputText", "value": "1", "label": "aversion[1][2] (tipo1 hacia tipo2)"},
+    "a13": {"type": "InputText", "value": "1", "label": "aversion[1][3] (tipo1 hacia tipo3)"},
+    "a21": {"type": "InputText", "value": "1", "label": "aversion[2][1] (tipo2 hacia tipo1)"},
+    "a22": {"type": "InputText", "value": "0", "label": "aversion[2][2] (auto-aversión tipo2)"},
+    "a23": {"type": "InputText", "value": "1", "label": "aversion[2][3] (tipo2 hacia tipo3)"},
+    "a31": {"type": "InputText", "value": "1", "label": "aversion[3][1] (tipo3 hacia tipo1)"},
+    "a32": {"type": "InputText", "value": "1", "label": "aversion[3][2] (tipo3 hacia tipo2)"},
+    "a33": {"type": "InputText", "value": "0", "label": "aversion[3][3] (auto-aversión tipo3)"},
 }
 
 
-def crear_modelo(n1=350, n2=350, n3=350, N=40, M=40):
-    return ModeloGeneral3(n1, n2, n3, N, M)
+def crear_modelo(n1=350, n2=350, n3=350, N=40, M=40, tolerancia="1.0",
+                  a11="0", a12="1", a13="1", a21="1", a22="0", a23="1",
+                  a31="1", a32="1", a33="0"):
+    return ModeloGeneral3(n1, n2, n3, N, M, tolerancia=tolerancia,
+                           a11=a11, a12=a12, a13=a13,
+                           a21=a21, a22=a22, a23=a23,
+                           a31=a31, a32=a32, a33=a33)
 
 
 modelo_inicial = crear_modelo()
@@ -167,7 +111,7 @@ PlotEntropia = make_plot_component("Entropia")
 
 Page = SolaraViz(
     modelo_inicial,
-    components=[SpaceGraph, PlotInsatisfaccion, PlotProporciones, PlotEntropia, InfoComponent, ControlesEnCaliente],
+    components=[SpaceGraph, PlotInsatisfaccion, PlotProporciones, PlotEntropia, InfoComponent],
     model_params=model_params,
-    name="Schelling General 3 — 3 poblaciones con matriz de afinidad",
+    name="Schelling General 3 — 3 poblaciones con matriz de aversión",
 )

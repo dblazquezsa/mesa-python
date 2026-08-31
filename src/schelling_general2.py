@@ -1,12 +1,18 @@
-"""Modelo de segregación tipo Schelling con 2 poblaciones y matriz de afinidad.
+"""Modelo de segregación tipo Schelling con 2 poblaciones y matriz de aversión.
 
 Generaliza modelo.py: en vez de una tolerancia fija por vecino "incómodo", cada
 tipo de agente siente una aversión (posiblemente distinta) hacia cada tipo,
-dada por una matriz 2x2 `afinidad`, donde `afinidad[i][j]` es la aversión que
+dada por una matriz 2x2 `aversion`, donde `aversion[i][j]` es la aversión que
 un agente de tipo i+1 siente por un vecino de tipo j+1. La insatisfacción de un
 agente es la suma de esas aversiones sobre todos sus vecinos actuales.
 
-    Modelo_General2(n1, n2, N, M, afinidad=[[0, 1], [1, 0]], tolerancia=1.0)
+    Modelo_General2(n1, n2, N, M, a11=0, a12=1, a21=1, a22=0, tolerancia=1.0)
+
+La matriz se recibe como 4 coeficientes sueltos (a11..a22) en vez de una
+matriz anidada porque la visualización de Solara reconstruye el modelo en
+cada "Reset" llamando a `ModeloGeneral2(**model_params)`, y sus parámetros
+deben coincidir uno a uno con las cajas de texto del panel "Model
+Parameters" (ver `mesa.visualization.solara_viz._check_model_params`).
 
 Un agente insatisfecho (insatisfacción > tolerancia) se mueve a la casilla
 vacía más cercana donde su insatisfacción sería estrictamente menor que en su
@@ -18,6 +24,18 @@ import math
 import mesa
 
 
+def _flotante_valido(valor, defecto):
+    """Convierte `valor` a float (aceptando texto con coma decimal, p.ej. de
+    una caja de texto de la visualización); si no es un número válido,
+    ignora el valor en silencio y devuelve `defecto`. Tolerancia y aversión
+    son números reales cualesquiera (positivos, negativos o cero), así que
+    aquí no se aplica ningún mínimo."""
+    try:
+        return float(str(valor).replace(",", "."))
+    except (TypeError, ValueError):
+        return defecto
+
+
 class AgenteGeneral2(mesa.Agent):
     def __init__(self, model, tipo: int, se_ha_movido: bool) -> None:
         super().__init__(model)
@@ -26,10 +44,10 @@ class AgenteGeneral2(mesa.Agent):
 
     def insatisfaccion(self, pos, tipo):
         """Insatisfacción que un agente de `tipo` sentiría en `pos`: suma de
-        las aversiones (según la matriz de afinidad) hacia sus vecinos ahí."""
+        las aversiones (según la matriz de aversión) hacia sus vecinos ahí."""
         vecinos = self.model.grid.get_neighbors(pos, moore=True, include_center=False)
-        afinidad = self.model.afinidad
-        return sum(afinidad[tipo - 1][vecino.tipo - 1] for vecino in vecinos)
+        aversion = self.model.aversion
+        return sum(aversion[tipo - 1][vecino.tipo - 1] for vecino in vecinos)
 
     def move(self):
         self.se_ha_movido = False
@@ -57,12 +75,13 @@ class AgenteGeneral2(mesa.Agent):
 
 
 class ModeloGeneral2(mesa.Model):
-    def __init__(self, n1, n2, N, M, afinidad=None, tolerancia=1.0, seed=None):
+    def __init__(self, n1, n2, N, M, a11=0, a12=1, a21=1, a22=0, tolerancia=1.0, seed=None):
         super().__init__(seed=seed)
-        if afinidad is None:
-            afinidad = [[0, 1], [1, 0]]
-        self.afinidad = afinidad
-        self.tolerancia = tolerancia
+        self.aversion = [
+            [_flotante_valido(a11, 0.0), _flotante_valido(a12, 1.0)],
+            [_flotante_valido(a21, 1.0), _flotante_valido(a22, 0.0)],
+        ]
+        self.tolerancia = _flotante_valido(tolerancia, 1.0)
         self.num_agents = n1 + n2
         self.grid = mesa.space.SingleGrid(N, M, torus=True)
         self.running = True

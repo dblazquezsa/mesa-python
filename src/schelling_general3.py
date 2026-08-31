@@ -1,7 +1,7 @@
-"""Modelo de segregación tipo Schelling con 3 poblaciones y matriz de afinidad.
+"""Modelo de segregación tipo Schelling con 3 poblaciones y matriz de aversión.
 
 Análogo a schelling_general2.py pero con 3 tipos de agentes (1, 2 y 3) y una
-matriz de afinidad 3x3, donde `afinidad[i][j]` es la aversión que un agente de
+matriz de aversión 3x3, donde `aversion[i][j]` es la aversión que un agente de
 tipo i+1 siente por un vecino de tipo j+1. Por defecto no hay auto-aversión y
 la aversión hacia cualquier otro tipo es 1:
 
@@ -9,7 +9,14 @@ la aversión hacia cualquier otro tipo es 1:
      [1, 0, 1],
      [1, 1, 0]]
 
-    Modelo_General3(n1, n2, n3, N, M, afinidad=..., tolerancia=1.0)
+    Modelo_General3(n1, n2, n3, N, M, a11=0, a12=1, a13=1,
+                     a21=1, a22=0, a23=1, a31=1, a32=1, a33=0, tolerancia=1.0)
+
+La matriz se recibe como 9 coeficientes sueltos (a11..a33) en vez de una
+matriz anidada porque la visualización de Solara reconstruye el modelo en
+cada "Reset" llamando a `ModeloGeneral3(**model_params)`, y sus parámetros
+deben coincidir uno a uno con las cajas de texto del panel "Model
+Parameters" (ver `mesa.visualization.solara_viz._check_model_params`).
 
 Un agente insatisfecho (insatisfacción > tolerancia) se mueve a la casilla
 vacía más cercana donde su insatisfacción sería estrictamente menor que en su
@@ -23,6 +30,32 @@ import mesa
 
 TIPOS = (1, 2, 3)
 
+# Valores por defecto usados cuando n1/n2/n3/N/M llegan inválidos (texto no
+# numérico, o negativos) desde la caja de texto de la visualización.
+_DEFECTOS = {"n1": 350, "n2": 350, "n3": 350, "N": 40, "M": 40}
+
+
+def _entero_valido(valor, nombre, minimo=0):
+    """Convierte `valor` a int si es posible y >= minimo; si no, ignora el
+    valor en silencio y devuelve el valor por defecto de `nombre`."""
+    try:
+        resultado = int(valor)
+    except (TypeError, ValueError):
+        return _DEFECTOS[nombre]
+    return resultado if resultado >= minimo else _DEFECTOS[nombre]
+
+
+def _flotante_valido(valor, defecto):
+    """Convierte `valor` a float (aceptando texto con coma decimal, p.ej. de
+    una caja de texto de la visualización); si no es un número válido,
+    ignora el valor en silencio y devuelve `defecto`. Tolerancia y aversión
+    son números reales cualesquiera (positivos, negativos o cero), así que
+    aquí no se aplica ningún mínimo."""
+    try:
+        return float(str(valor).replace(",", "."))
+    except (TypeError, ValueError):
+        return defecto
+
 
 class AgenteGeneral3(mesa.Agent):
     def __init__(self, model, tipo: int, se_ha_movido: bool) -> None:
@@ -32,10 +65,10 @@ class AgenteGeneral3(mesa.Agent):
 
     def insatisfaccion(self, pos, tipo):
         """Insatisfacción que un agente de `tipo` sentiría en `pos`: suma de
-        las aversiones (según la matriz de afinidad) hacia sus vecinos ahí."""
+        las aversiones (según la matriz de aversión) hacia sus vecinos ahí."""
         vecinos = self.model.grid.get_neighbors(pos, moore=True, include_center=False)
-        afinidad = self.model.afinidad
-        return sum(afinidad[tipo - 1][vecino.tipo - 1] for vecino in vecinos)
+        aversion = self.model.aversion
+        return sum(aversion[tipo - 1][vecino.tipo - 1] for vecino in vecinos)
 
     def move(self):
         self.se_ha_movido = False
@@ -63,12 +96,23 @@ class AgenteGeneral3(mesa.Agent):
 
 
 class ModeloGeneral3(mesa.Model):
-    def __init__(self, n1, n2, n3, N, M, afinidad=None, tolerancia=1.0, seed=None):
+    def __init__(self, n1, n2, n3, N, M,
+                 a11=0, a12=1, a13=1,
+                 a21=1, a22=0, a23=1,
+                 a31=1, a32=1, a33=0,
+                 tolerancia=1.0, seed=None):
         super().__init__(seed=seed)
-        if afinidad is None:
-            afinidad = [[0, 1, 1], [1, 0, 1], [1, 1, 0]]
-        self.afinidad = afinidad
-        self.tolerancia = tolerancia
+        n1 = _entero_valido(n1, "n1")
+        n2 = _entero_valido(n2, "n2")
+        n3 = _entero_valido(n3, "n3")
+        N = _entero_valido(N, "N", minimo=1)
+        M = _entero_valido(M, "M", minimo=1)
+        self.aversion = [
+            [_flotante_valido(a11, 0.0), _flotante_valido(a12, 1.0), _flotante_valido(a13, 1.0)],
+            [_flotante_valido(a21, 1.0), _flotante_valido(a22, 0.0), _flotante_valido(a23, 1.0)],
+            [_flotante_valido(a31, 1.0), _flotante_valido(a32, 1.0), _flotante_valido(a33, 0.0)],
+        ]
+        self.tolerancia = _flotante_valido(tolerancia, 1.0)
         self.num_agents = n1 + n2 + n3
         self.grid = mesa.space.SingleGrid(N, M, torus=True)
         self.running = True
