@@ -75,27 +75,27 @@ def InfoComponent(model):
 
 
 model_params = {
-    "n1": {"type": "InputText", "value": "350", "label": "n1 (tipo 1)"},
-    "n2": {"type": "InputText", "value": "350", "label": "n2 (tipo 2)"},
-    "n3": {"type": "InputText", "value": "350", "label": "n3 (tipo 3)"},
+    "n1": {"type": "InputText", "value": "500", "label": "n1 (tipo 1)"},
+    "n2": {"type": "InputText", "value": "500", "label": "n2 (tipo 2)"},
+    "n3": {"type": "InputText", "value": "500", "label": "n3 (tipo 3)"},
     "N": {"type": "InputText", "value": "40", "label": "N (ancho de la grilla)"},
     "M": {"type": "InputText", "value": "40", "label": "M (alto de la grilla)"},
     "tolerancia": {"type": "InputText", "value": "1.0", "label": "Tolerancia"},
     "a11": {"type": "InputText", "value": "0", "label": "aversion[1][1] (auto-aversión tipo1)"},
     "a12": {"type": "InputText", "value": "1", "label": "aversion[1][2] (tipo1 hacia tipo2)"},
-    "a13": {"type": "InputText", "value": "1", "label": "aversion[1][3] (tipo1 hacia tipo3)"},
-    "a21": {"type": "InputText", "value": "1", "label": "aversion[2][1] (tipo2 hacia tipo1)"},
+    "a13": {"type": "InputText", "value": "0", "label": "aversion[1][3] (tipo1 hacia tipo3)"},
+    "a21": {"type": "InputText", "value": "0", "label": "aversion[2][1] (tipo2 hacia tipo1)"},
     "a22": {"type": "InputText", "value": "0", "label": "aversion[2][2] (auto-aversión tipo2)"},
     "a23": {"type": "InputText", "value": "1", "label": "aversion[2][3] (tipo2 hacia tipo3)"},
     "a31": {"type": "InputText", "value": "1", "label": "aversion[3][1] (tipo3 hacia tipo1)"},
-    "a32": {"type": "InputText", "value": "1", "label": "aversion[3][2] (tipo3 hacia tipo2)"},
+    "a32": {"type": "InputText", "value": "0", "label": "aversion[3][2] (tipo3 hacia tipo2)"},
     "a33": {"type": "InputText", "value": "0", "label": "aversion[3][3] (auto-aversión tipo3)"},
 }
 
 
-def crear_modelo(n1=350, n2=350, n3=350, N=40, M=40, tolerancia="1.0",
-                  a11="0", a12="1", a13="1", a21="1", a22="0", a23="1",
-                  a31="1", a32="1", a33="0"):
+def crear_modelo(n1=500, n2=500, n3=500, N=40, M=40, tolerancia="0.0",
+                  a11="0", a12="1", a13="0", a21="0", a22="0", a23="1",
+                  a31="1", a32="0", a33="0"):
     return ModeloGeneral3(n1, n2, n3, N, M, tolerancia=tolerancia,
                            a11=a11, a12=a12, a13=a13,
                            a21=a21, a22=a22, a23=a23,

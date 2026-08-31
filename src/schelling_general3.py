@@ -32,7 +32,7 @@ TIPOS = (1, 2, 3)
 
 # Valores por defecto usados cuando n1/n2/n3/N/M llegan inválidos (texto no
 # numérico, o negativos) desde la caja de texto de la visualización.
-_DEFECTOS = {"n1": 350, "n2": 350, "n3": 350, "N": 40, "M": 40}
+_DEFECTOS = {"n1": 500, "n2": 500, "n3": 500, "N": 40, "M": 40}
 
 
 def _entero_valido(valor, nombre, minimo=0):
@@ -97,9 +97,9 @@ class AgenteGeneral3(mesa.Agent):
 
 class ModeloGeneral3(mesa.Model):
     def __init__(self, n1, n2, n3, N, M,
-                 a11=0, a12=1, a13=1,
-                 a21=1, a22=0, a23=1,
-                 a31=1, a32=1, a33=0,
+                 a11=0, a12=1, a13=0,
+                 a21=0, a22=0, a23=1,
+                 a31=1, a32=0, a33=0,
                  tolerancia=1.0, seed=None):
         super().__init__(seed=seed)
         n1 = _entero_valido(n1, "n1")
