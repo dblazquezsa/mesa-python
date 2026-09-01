@@ -36,6 +36,16 @@ def _flotante_valido(valor, defecto):
         return defecto
 
 
+def _entero_valido(valor, defecto):
+    """Como `_flotante_valido`, pero para n1, n2, N y M (recibidos como texto
+    desde las cajas de la visualización); si no es un entero válido, ignora
+    el valor en silencio y devuelve `defecto`."""
+    try:
+        return int(float(str(valor).replace(",", ".")))
+    except (TypeError, ValueError):
+        return defecto
+
+
 class AgenteGeneral2(mesa.Agent):
     def __init__(self, model, tipo: int, se_ha_movido: bool) -> None:
         super().__init__(model)
@@ -77,6 +87,10 @@ class AgenteGeneral2(mesa.Agent):
 class ModeloGeneral2(mesa.Model):
     def __init__(self, n1, n2, N, M, a11=0, a12=1, a21=1, a22=0, tolerancia=1.0, seed=None):
         super().__init__(seed=seed)
+        n1 = _entero_valido(n1, 500)
+        n2 = _entero_valido(n2, 500)
+        N = _entero_valido(N, 40)
+        M = _entero_valido(M, 40)
         self.aversion = [
             [_flotante_valido(a11, 0.0), _flotante_valido(a12, 1.0)],
             [_flotante_valido(a21, 1.0), _flotante_valido(a22, 0.0)],

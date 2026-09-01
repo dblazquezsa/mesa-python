@@ -24,7 +24,7 @@ import textwrap
 
 import solara
 
-from mesa.visualization import SolaraViz, Slider, make_space_component, make_plot_component
+from mesa.visualization import SolaraViz, make_space_component, make_plot_component
 from mesa.visualization.utils import update_counter
 
 from schelling_general2 import ModeloGeneral2
@@ -67,10 +67,10 @@ def InfoComponent(model):
 
 
 model_params = {
-    "n1": Slider("n1 (tipo 1)", 500, 0, 1500, 10),
-    "n2": Slider("n2 (tipo 2)", 500, 0, 1500, 10),
-    "N": Slider("N (ancho de la grilla)", 40, 5, 100, 1),
-    "M": Slider("M (alto de la grilla)", 40, 5, 100, 1),
+    "n1": {"type": "InputText", "value": "750", "label": "n1 (tipo 1)"},
+    "n2": {"type": "InputText", "value": "750", "label": "n2 (tipo 2)"},
+    "N": {"type": "InputText", "value": "40", "label": "N (ancho de la grilla)"},
+    "M": {"type": "InputText", "value": "40", "label": "M (alto de la grilla)"},
     "tolerancia": {"type": "InputText", "value": "1.0", "label": "Tolerancia"},
     "a11": {"type": "InputText", "value": "0", "label": "aversion[1][1] (auto-aversión tipo1)"},
     "a12": {"type": "InputText", "value": "1", "label": "aversion[1][2] (tipo1 hacia tipo2)"},
@@ -79,7 +79,7 @@ model_params = {
 }
 
 
-def crear_modelo(n1=500, n2=500, N=40, M=40, tolerancia="1.0",
+def crear_modelo(n1=750, n2=750, N=40, M=40, tolerancia="1.0",
                   a11="0", a12="1", a21="1", a22="0"):
     return ModeloGeneral2(n1, n2, N, M, tolerancia=tolerancia,
                            a11=a11, a12=a12, a21=a21, a22=a22)
